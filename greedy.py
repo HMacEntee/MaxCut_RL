@@ -3,7 +3,6 @@
 import copy
 import time
 from typing import List, Union
-import numpy as np
 import networkx as nx
 from util import read_nxgraph
 from util import obj_maxcut

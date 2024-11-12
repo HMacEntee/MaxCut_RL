@@ -1,5 +1,3 @@
-import sys
-
 import copy
 import time
 from typing import List, Union

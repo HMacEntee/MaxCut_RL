@@ -7,9 +7,6 @@ from typing import List, Union
 import random
 from util import read_nxgraph
 from util import obj_maxcut
-
-
-import sys
 '''
 Random Walk on MaxCut
 Random Walk will randomly flip a number of of a current binary vector, then select the best progression
