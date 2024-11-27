@@ -1,10 +1,7 @@
 # imports
-import copy
-import time
 import networkx as nx
 import numpy as np
 from typing import List, Union
-import random
 from util import *
 # PuLP is a linear & mixed integer programming modeler used to constuct 
 # optimization problems and call solvers (CPLEX, GUROBI, etc...)
@@ -20,6 +17,7 @@ from pulp import *
 # https://www.tcs.tifr.res.in/~prahladh/teaching/2009-10/limits/lectures/lec03.pdf
 def milp(graph, solver):
 
+    # Create dictionary of weights dependent on weight/unweighted graph
     edges = graph.edges(data=True)
     weights = {}
     weighted = nx.is_weighted(graph)
@@ -28,7 +26,6 @@ def milp(graph, solver):
         weights ={(u, v) : w["weight"] for (u, v, w) in edges}
     else:
         weights = {(u, v) : 1 for (u, v, _) in edges}
-
 
     #define problem
     maxcut = LpProblem("maxcut", LpMaximize)
@@ -42,14 +39,6 @@ def milp(graph, solver):
 
     # define maxcut problem constraints
     for (u, v) in graph.edges:
-        # maxcut += (
-        #     e[(u, v)] >= x[u] - x[v],
-        #     f"cut_edge_constraint_one{u}_{v}"
-        # )
-        # maxcut += (
-        #     e[(u, v)] >= x[v] - x[u],
-        #     f"cut_edge_constraint_two{u}_{v}"
-        # )
         maxcut += (
             e[(u, v)] <= x[u] + x[v],
             f"cut_edge_constraint_three{u}_{v}"
@@ -59,7 +48,7 @@ def milp(graph, solver):
             f"Ensure_cut_edge_principles_{u}_{v}"
         )
         
-    # solve the problem using gurobi solver
+    # solve the problem using provided solver, adjuct time limit to graph size
     maxcut.solve(solver(msg=True, timeLimit=60))
 
     # display results
@@ -78,7 +67,7 @@ if __name__ == "__main__":
     fiveGW.add_nodes_from([0,1,2,3,4])
     fiveGW.add_weighted_edges_from([(0,1,1), (0,2,1), (1,2,1), (1,3,1), (2,4,1), (3,4,1)])
 
-    # List availbe solvers
+    # List available solvers usable locally
     print(listSolvers(onlyAvailable=True))
 
     # solve for undirected graph
