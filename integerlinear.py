@@ -1,0 +1,77 @@
+# imports
+import copy
+import time
+import networkx as nx
+import numpy as np
+from typing import List, Union
+import random
+from util import *
+# PuLP is a linear & mixed integer programming modeler used to constuct 
+# optimization problems and call solvers (CPLEX, GUROBI, etc...)
+# https://coin-or.github.io/pulp/main/includeme.html
+from pulp import *
+
+# problem forumlation dervied from the below 
+# https://www.tcs.tifr.res.in/~prahladh/teaching/2009-10/limits/lectures/lec03.pdf
+def milp(graph, solver):
+
+    edges = graph.edges(data=True)
+    weights = {}
+    weighted = nx.is_weighted(graph)
+    if weighted:
+        pass
+        weights ={(u, v) : w["weight"] for (u, v, w) in edges}
+    else:
+        weights = {(u, v) : 1 for (u, v, _) in edges}
+
+
+    #define problem
+    maxcut = LpProblem("maxcut", LpMaximize)
+
+    # construct problem variables
+    x = {node : pulp.LpVariable(name=f"x_{node}", cat="binary") for node in graph.nodes}
+    e = {(u, v): pulp.LpVariable(name=f"e_{u},{v}", cat="binary") for (u, v, _) in edges}
+
+    # define objective function
+    maxcut += pulp.lpSum([weights[(u, v)] * e[(u, v)] for (u, v) in e]), "Sum_of_cut_edges"
+
+    # define maxcut problem constraints
+    for (u, v) in graph.edges:
+        maxcut += (
+            e[(u, v)] <= x[u] + x[v],
+            f"cut_edges_vertices_in_different_subsets_{u}_{v}"
+        )
+        maxcut += (
+            e[(u, v)] <= 2 - (x[u] + x[v]),
+            f"Ensure_cut_edge_principles_{u}_{v}"
+        )
+        
+    # solve the problem using gurobi solver
+    maxcut.solve(solver(msg=True, timeLimit=60))
+
+    # display results
+    print(f"Gurobi Status:{maxcut.status}")
+    cutedges = [ pulp.value(e[(u, v)]) for (u, v) in e ]
+    print(f"Edges cut: {sum(cutedges)}")
+
+if __name__ == "__main__":
+
+    # create temp nxgraph (weighted and unweighted)
+    fiveGNW= nx.Graph()
+    fiveGNW.add_nodes_from([0,1,2,3,4])
+    fiveGNW.add_edges_from([(0,1), (0,2), (1,2), (1,3), (2,4), (3,4)])
+
+    fiveGW= nx.Graph()
+    fiveGW.add_nodes_from([0,1,2,3,4])
+    fiveGW.add_weighted_edges_from([(0,1,1), (0,2,1), (1,2,1), (1,3,1), (2,4,1), (3,4,1)])
+
+    # List availbe solvers
+    print(listSolvers(onlyAvailable=True))
+
+    # solve for undirected graph
+    # milp(fiveGNW, GUROBI)    
+    # milp(fiveGNW, CPLEX)    
+
+
+
+
