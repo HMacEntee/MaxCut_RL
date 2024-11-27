@@ -11,6 +11,11 @@ from util import *
 # https://coin-or.github.io/pulp/main/includeme.html
 from pulp import *
 
+# IMPORTANT 
+# you must locally install the GUROBI and CPLEX solvers
+# pip install gurobipy
+# pip install cplex ???? doesnt work for me maybe you have to install it via gui at IBM Watson
+
 # problem forumlation dervied from the below 
 # https://www.tcs.tifr.res.in/~prahladh/teaching/2009-10/limits/lectures/lec03.pdf
 def milp(graph, solver):
@@ -29,17 +34,25 @@ def milp(graph, solver):
     maxcut = LpProblem("maxcut", LpMaximize)
 
     # construct problem variables
-    x = {node : pulp.LpVariable(name=f"x_{node}", cat="binary") for node in graph.nodes}
-    e = {(u, v): pulp.LpVariable(name=f"e_{u},{v}", cat="binary") for (u, v, _) in edges}
+    x = {node : pulp.LpVariable(name=f"x_{node}", cat="Binary") for node in graph.nodes}
+    e = {(u, v): pulp.LpVariable(name=f"e_{u},{v}", cat="Binary") for (u, v, _) in edges}
 
     # define objective function
     maxcut += pulp.lpSum([weights[(u, v)] * e[(u, v)] for (u, v) in e]), "Sum_of_cut_edges"
 
     # define maxcut problem constraints
     for (u, v) in graph.edges:
+        # maxcut += (
+        #     e[(u, v)] >= x[u] - x[v],
+        #     f"cut_edge_constraint_one{u}_{v}"
+        # )
+        # maxcut += (
+        #     e[(u, v)] >= x[v] - x[u],
+        #     f"cut_edge_constraint_two{u}_{v}"
+        # )
         maxcut += (
             e[(u, v)] <= x[u] + x[v],
-            f"cut_edges_vertices_in_different_subsets_{u}_{v}"
+            f"cut_edge_constraint_three{u}_{v}"
         )
         maxcut += (
             e[(u, v)] <= 2 - (x[u] + x[v]),
@@ -69,8 +82,9 @@ if __name__ == "__main__":
     print(listSolvers(onlyAvailable=True))
 
     # solve for undirected graph
-    # milp(fiveGNW, GUROBI)    
+    milp(fiveGNW, GUROBI)    
     # milp(fiveGNW, CPLEX)    
+        
 
 
 
